@@ -3,18 +3,13 @@
 public class CompositionOrchestrator
 {
     private readonly CancellationTokenSource _cancellationTokenSource;
-    private readonly List<ICompositionRequestHandler<RequestStub, ViewModelStub>> _listHandlers;
+    private readonly List<ICompositionRequestHandler<RequestStub, ViewModelStub>> _handlers;
     private int? _httpStatusErrorCodeEncountered;
 
-    public CompositionOrchestrator()
+    public CompositionOrchestrator(List<ICompositionRequestHandler<RequestStub, ViewModelStub>> handlers)
     {
         _cancellationTokenSource = new CancellationTokenSource();
-        _listHandlers = new List<ICompositionRequestHandler<RequestStub, ViewModelStub>>()
-        {
-            new DescriptionCompositionRequestHandler(),
-            new IdCompositionRequestHandler(),
-            new NameCompositionRequestHandler()
-        };
+        _handlers = handlers;
     }
 
     public async Task<Result<ViewModelStub>> HandleRequestHandlers()
@@ -23,11 +18,11 @@ public class CompositionOrchestrator
         var viewModel = new ViewModelStub();
 
         // Register event handlers
-        _listHandlers
+        _handlers
             .ForEach(h=> h.ErrorEncountered += RequestHandler_ErrorEncountered);
 
         // build list of tasks
-        var tasks = _listHandlers
+        var tasks = _handlers
             .Select(h => h.Handle(request, viewModel, _cancellationTokenSource.Token));
 
         // await all tasks

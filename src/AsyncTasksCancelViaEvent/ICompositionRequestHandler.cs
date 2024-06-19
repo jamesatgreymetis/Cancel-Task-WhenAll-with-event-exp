@@ -23,7 +23,9 @@ namespace AsyncTasksCancelViaEvent
     {
         public async Task Handle(RequestStub requestStub, ViewModelStub viewModelStub, CancellationToken token = default)
         {
-            await Task.Delay(5, token);
+            if (!token.IsCancellationRequested)
+                await Task.Delay(5, token);
+
             if (!token.IsCancellationRequested)
                 viewModelStub.Id = Guid.NewGuid();
         }
@@ -33,12 +35,23 @@ namespace AsyncTasksCancelViaEvent
     {
         public async Task Handle(RequestStub requestStub, ViewModelStub viewModelStub, CancellationToken token = default)
         {
-            await Task.Delay(10, token);
-
-            OnErrorEncountered(new ErrorEncounteredArgs(500));
+            if (!token.IsCancellationRequested)
+                await Task.Delay(10, token);
 
             if (!token.IsCancellationRequested)
                 viewModelStub.Description = "Description set by DescriptionCompositionRequestHandler";
+        }
+    }
+
+    public class ErrorCompositionRequestHandler(int delay, int httpStatusCode)
+        : RequestHandlerBase, ICompositionRequestHandler<RequestStub, ViewModelStub>
+    {
+        public async Task Handle(RequestStub requestStub, ViewModelStub viewModelStub, CancellationToken token = default)
+        {
+            if (!token.IsCancellationRequested)
+                await Task.Delay(delay, token);
+
+            OnErrorEncountered(new ErrorEncounteredArgs(httpStatusCode));
         }
     }
 
@@ -46,7 +59,8 @@ namespace AsyncTasksCancelViaEvent
     {
         public async Task Handle(RequestStub requestStub, ViewModelStub viewModelStub, CancellationToken token = default)
         {
-            await Task.Delay(15, token);
+            if (!token.IsCancellationRequested)
+                await Task.Delay(15, token);
 
             if (!token.IsCancellationRequested)
                 viewModelStub.Name = "Name set by NameCompositionRequestHandler";
