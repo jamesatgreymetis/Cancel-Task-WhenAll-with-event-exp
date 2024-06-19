@@ -4,21 +4,21 @@ namespace AsyncTasksCancelViaEvent
 {
     public interface ICompositionRequestHandler<in TRequest, in TViewModel>
     {
-        event EventHandler ErrorEncountered;
+        event EventHandler<ErrorEncounteredArgs> ErrorEncountered;
 
         Task Handle(TRequest request, TViewModel viewModel, CancellationToken token = default);
     }
 
     public abstract class RequestHandlerBase
     {
-        public event EventHandler? ErrorEncountered;
+        public event EventHandler<ErrorEncounteredArgs>? ErrorEncountered;
 
-        protected virtual void OnErrorEncountered(EventArgs e)
+        protected virtual void OnErrorEncountered(ErrorEncounteredArgs e)
         {
             ErrorEncountered?.Invoke(this, e);
         }
     }
-
+    
     public class IdCompositionRequestHandler : RequestHandlerBase, ICompositionRequestHandler<RequestStub, ViewModelStub>
     {
         public async Task Handle(RequestStub requestStub, ViewModelStub viewModelStub, CancellationToken token = default)
@@ -35,7 +35,7 @@ namespace AsyncTasksCancelViaEvent
         {
             await Task.Delay(10, token);
 
-            OnErrorEncountered(EventArgs.Empty);
+            OnErrorEncountered(new ErrorEncounteredArgs(500));
 
             if (!token.IsCancellationRequested)
                 viewModelStub.Description = "Description set by DescriptionCompositionRequestHandler";

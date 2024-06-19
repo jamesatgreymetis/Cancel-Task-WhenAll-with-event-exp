@@ -4,6 +4,7 @@ public class CompositionOrchestrator
 {
     private readonly CancellationTokenSource _cancellationTokenSource;
     private readonly List<ICompositionRequestHandler<RequestStub, ViewModelStub>> _listHandlers;
+    private int? _httpStatusErrorCodeEncountered;
 
     public CompositionOrchestrator()
     {
@@ -16,7 +17,7 @@ public class CompositionOrchestrator
         };
     }
 
-    public async Task<ViewModelStub> HandleRequestHandlers()
+    public async Task<Result<ViewModelStub>> HandleRequestHandlers()
     {
         var request = new RequestStub();
         var viewModel = new ViewModelStub();
@@ -32,11 +33,14 @@ public class CompositionOrchestrator
         // await all tasks
         await Task.WhenAll(tasks);
 
-        return viewModel;
+        return _httpStatusErrorCodeEncountered.HasValue ? 
+            Result<ViewModelStub>.Failure(_httpStatusErrorCodeEncountered.Value) : 
+            Result<ViewModelStub>.Success(viewModel);
     }
 
-    private void RequestHandler_ErrorEncountered(object? sender, EventArgs e)
+    private void RequestHandler_ErrorEncountered(object? sender, ErrorEncounteredArgs e)
     {
         _cancellationTokenSource.Cancel();
+        _httpStatusErrorCodeEncountered = e.HttpStatusErrorCode;
     }
 }
